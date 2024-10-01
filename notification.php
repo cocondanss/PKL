@@ -19,4 +19,4 @@ if ($signature_key !== $hashed) {
 }
 
 // Jika signature valid, proses notifikasi
-midtrans_notification();
+midtrans_notification()
