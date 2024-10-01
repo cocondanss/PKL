@@ -3,8 +3,8 @@
 
 // Database configuration
 $db_host = 'localhost';
-$db_user = 'u529472640_framee';
 $db_name = 'u529472640_root';
+$db_user = 'u529472640_framee';
 $db_pass = 'AkuSukaMangga01';
 
 try {
