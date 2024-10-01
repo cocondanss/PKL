@@ -2,7 +2,7 @@
 session_start();
 //koneksi ke database
 $conn =mysqli_connect("localhost","u529472640_root
-","AkuSukaMangga01","u529472640_framee");
+","Daclen123","u529472640_framee");
 //if($conn){
 //    echo 'berhasil';
 //}

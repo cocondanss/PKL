@@ -5,7 +5,7 @@
 $db_host = 'localhost';
 $db_name = 'u529472640_root';
 $db_user = 'u529472640_framee';
-$db_pass = 'AkuSukaMangga01';
+$db_pass = 'Daclen123';
 
 try {
     $db = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
