@@ -74,6 +74,19 @@
                 </div>
             </div>
         `;
+        <?php
+        $product_id = $product['id'];
+        $product_name = $product['name'];
+        $product_price = $product['price'];
+        $product_stock = $product['stok']; // dapatkan kuantitas stok dari database
+
+        if ($product_stock > 0) {
+            // tampilkan tombol "Beli"
+            echo '<button type="submit">Beli</button>';
+        } else {
+            echo '<p>Stok habis</p>';
+        }
+        ?>
 
         // Pasang kembali event listener setelah konten diperbarui
         document.getElementById('next-payment').addEventListener('click', function() {
