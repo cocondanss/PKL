@@ -74,7 +74,7 @@
                 </div>
             </div>
         `;
-        
+
         // Pasang kembali event listener setelah konten diperbarui
         document.getElementById('next-payment').addEventListener('click', function() {
             const voucherCode = document.querySelector('input[name="voucher_code"]')?.value || '';
