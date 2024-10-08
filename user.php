@@ -9,7 +9,7 @@ require 'cek.php';
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>Transaksi</title>
+        <title>User</title>
         <link href="css/style.css" rel="stylesheet" />
         <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css" rel="stylesheet" crossorigin="anonymous" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" crossorigin="anonymous"></script>
@@ -51,71 +51,75 @@ require 'cek.php';
             <div id="layoutSidenav_content">
                 <main>
                     <div class="container-fluid">
-                        <h1 class="mt-4">Transaksi</h1>
+                        <h1 class="mt-4">User</h1>
                         </ol>
                         <div class="card mb-4">
-                            <!-- <div class="card-header">
+                            <div class="card-header">
                             <button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal">
-                                    Tambah Transaksi
+                                    Tambah User
                              </button>
-                            </div> -->
+                            </div>
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
                                                 <th>No</th>
-                                                <th>Nama Barang</th>
-                                                <th>Harga</th>
-                                                <th>Tanggal Terima</th>
+                                                <th>Nama User</th>
                                                 <th>Status</th>
+                                                <th>Umur</th>
                                                 <th>Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                        <?php
-                                            $ambilsemuadatatransaksi = mysqli_query($conn, "select * from transaksi");
+
+                                            <?php
+                                            $ambilsemuadatauser = mysqli_query($conn, "select * from user");
                                             $i = 1;
-                                            while($data=mysqli_fetch_array($ambilsemuadatatransaksi)){
-                                                $product_name = $data['product_name'];
-                                                $price = $data['price'];
-                                                $tanggal = $data['tanggal'];
+                                            while($data=mysqli_fetch_array($ambilsemuadatauser)){
+                                                $namauser = $data['namauser'];
                                                 $status = $data['status'];
-                                                $idt = $data['product_id'];
+                                                $umur = $data['umur'];
+                                                $idu = $data['iduser'];
 
 
                                             ?>
+
                                             <tr>
                                                 <td><?=$i++;?></td>
-                                                <td><?=$product_name;?></td>
-                                                <td><?=$price;?></td>
-                                                <td><?=$tanggal;?></td>
+                                                <td><?=$namauser;?></td>
                                                 <td><?=$status;?></td>
+                                                <td><?=$umur;?></td>
                                                 <td>
-                                                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delete<?=$idt;?>">
+                                                <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#edit<?=$idu;?>">
+                                                        Edit
+                                                </button>
+                                                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delete<?=$idu;?>">
                                                         Delete
                                                 </button>
                                                 </td>
                                             </tr>
-                                                <!-- Delete Modal -->
-                                            <div class="modal fade" id="delete<?=$idt;?>">
+
+
+                                            <!-- Edit Modal -->
+                                            <div class="modal fade" id="edit<?=$idu;?>">
                                                 <div class="modal-dialog">
                                                 <div class="modal-content">
                                                 
                                                     <!-- Modal Header -->
                                                     <div class="modal-header">
-                                                    <h4 class="modal-title">Hapus Transaksi?</h4>
+                                                    <h4 class="modal-title">Edit User</h4>
                                                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                                                     </div>
                                                     
                                                     <!-- Modal body -->
                                                     <form method="post">
                                                     <div class="modal-body">
-                                                    Apakah Anda Yakin Ingin Menghapus <?=$product_name;?>?
-                                                    <input type="hidden" name="idt" value="<?=$idt?>">
-                                                    <br>
-                                                    <br>
-                                                    <button type="submit" class="btn btn-danger" name="hapustransaksi">Hapus</button><br>
+                                                    <input type="text" name="namauser" value="<?=$namauser;?>" class="form-control" required><br>
+                                                    <input type="text" name="status" value="<?=$status;?>" class="form-control" required><br>
+                                                    <input type="number" name="umur" value="<?=$umur;?>" class="form-control" required><br>
+                                                    <input type="hidden" name="idu" value="<?=$idu?>">
+                                                    <button type="submit" class="btn btn-primary" name="updateuser">Submit</button><br>
                                                     </div>
                                                     </form>
 
@@ -123,10 +127,38 @@ require 'cek.php';
                                                     </div>
                                                 </div>
 
+                                                <!-- Delete Modal -->
+                                            <div class="modal fade" id="delete<?=$idu;?>">
+                                                <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                
+                                                    <!-- Modal Header -->
+                                                    <div class="modal-header">
+                                                    <h4 class="modal-title">Hapus User?</h4>
+                                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                                    </div>
+                                                    
+                                                    <!-- Modal body -->
+                                                    <form method="post">
+                                                    <div class="modal-body">
+                                                    Apakah Anda Yakin Ingin Menghapus <?=$namauser;?>?
+                                                    <input type="hidden" name="idu" value="<?=$idu?>">
+                                                    <br>
+                                                    <br>
+                                                    <button type="submit" class="btn btn-danger" name="hapususer">Hapus</button><br>
+                                                    </div>
+                                                    </form>
+
+                                                    </div>
+                                                    </div>
+                                                </div>
+
+
                                             <?php
                                             };
 
                                             ?>
+                                            
                                         </tbody>
                                     </table>
                                 </div>
@@ -154,10 +186,10 @@ require 'cek.php';
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
         <script src="assets/demo/chart-area-demo.js"></script>
         <script src="assets/demo/chart-bar-demo.js"></script>
-        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
         <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
         <script src="assets/demo/datatables-demo.js"></script>
     </body>
+
     <!-- The Modal -->
   <div class="modal fade" id="myModal">
     <div class="modal-dialog">
@@ -165,18 +197,21 @@ require 'cek.php';
       
         <!-- Modal Header -->
         <div class="modal-header">
-          <h4 class="modal-title">Tambah Transaksi</h4>
+          <h4 class="modal-title">Tambah User</h4>
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
         
         <!-- Modal body -->
          <form method="post">
          <div class="modal-body">
-        <input type="text" name="product_name" placeholder="Nama Barang" class="form-control" required><br>
-        <input type="number" name="price" placeholder="Harga" class="form-control" required><br>
-        <input type="date" name="tanggal" placeholder="Tanggal Masuk" class="form-control" required><br>
-        <input type="text" name="status" placeholder="Nama Penerima" class="form-control" required><br>
-        <button type="submit" class="btn btn-primary" name="TambahTransaksi">Submit</button><br>
+        <input type="text" name="namauser" placeholder="Nama User" class="form-control" required><br>
+        <input type="text" name="status" placeholder="Status User" class="form-control" required><br>
+        <input type="number" name="umur" placeholder="Umur User" class="form-control" required><br>
+        <button type="submit" class="btn btn-primary" name="TambahUser">Submit</button><br>
         </div>
         </form>
+
+    </div>
+    </div>
+</div>
 </html>

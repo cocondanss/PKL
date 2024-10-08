@@ -23,6 +23,8 @@ try {
                     apply_voucher($data);
                 } elseif ($data['action'] === 'create_transaction') {
                     create_transaction($data);
+                } elseif ($data['action'] === 'apply_voucher') {
+                    apply_voucher($data);
                 }
             } else {
                 header("HTTP/1.0 400 Bad Request");
@@ -38,7 +40,6 @@ try {
     http_response_code(500);
     echo json_encode(["error" => $e->getMessage()]);
 }
-
 function get_products() {
     global $db;
     try {
@@ -56,49 +57,50 @@ function get_products() {
 function apply_voucher($data) {
     global $db;
 
-    if (!isset($data['product_id']) || !isset($data['voucher_code']) || !isset($data['product_price'])) {
+    if (!isset($data['voucher_code'])) {
         header("HTTP/1.0 400 Bad Request");
-        echo json_encode(["error" => "Missing required fields"]);
+        echo json_encode(["error" => "Missing voucher code"]);
         return;
     }
 
-    $product_id = $data['product_id'];
     $voucher_code = $data['voucher_code'];
-    $product_price = $data['product_price'];
 
     try {
         $stmt = $db->prepare("SELECT id, discount_amount, is_used FROM vouchers WHERE code = ?");
         $stmt->execute([$voucher_code]);
         $voucher = $stmt->fetch();
 
-        if ($voucher) {
-            if ($voucher['is_used'] == 0) {
-                $discount = intval($voucher['discount_amount']);
-                $discounted_price = $product_price - $discount;
-                $voucher_message = "Voucher berhasil diterapkan!";
-                
-                // STORE THE CODE HERE
-                date_default_timezone_set('Asia/Jakarta');
-                $currentTime = date("Y-m-d H:i:s");
-                $stmt = $db->prepare("UPDATE vouchers SET is_used = 1, used_at = ? WHERE id = ?");
-                $stmt->execute([$currentTime, $voucher['id']]);
+        if ($voucher && $voucher['is_used'] == 0) {
+            $discount = intval($voucher['discount_amount']);
 
-                echo json_encode([
-                    'success' => true,
-                    'discount' => $discount,
-                    'discounted_price' => $discounted_price,
-                    'message' => $voucher_message
-                ]);
-            } else {
-                echo json_encode([
-                    'success' => false,
-                    'message' => "Kode voucher sudah digunakan!"
-                ]);
+            // Get all products
+            $stmt = $db->prepare("SELECT id, price FROM products");
+            $stmt->execute();
+            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $discounted_prices = [];
+            foreach ($products as $product) {
+                $discounted_price = max(0, $product['price'] - $discount);
+                $discounted_prices[] = [
+                    'id' => $product['id'],
+                    'discounted_price' => $discounted_price
+                ];
             }
+
+            // Mark voucher as used
+            $stmt = $db->prepare("UPDATE vouchers SET is_used = 1, used_at = NOW() WHERE id = ?");
+            $stmt->execute([$voucher['id']]);
+
+            echo json_encode([
+                'success' => true,
+                'discount' => $discount,
+                'discounted_prices' => $discounted_prices,
+                'message' => "Voucher berhasil diterapkan ke semua produk!"
+            ]);
         } else {
             echo json_encode([
                 'success' => false,
-                'message' => "Kode voucher tidak valid!"
+                'message' => $voucher ? "Kode voucher sudah digunakan!" : "Kode voucher tidak valid!"
             ]);
         }
     } catch (Exception $e) {
@@ -106,6 +108,7 @@ function apply_voucher($data) {
         echo json_encode(["error" => $e->getMessage()]);
     }
 }
+
 function create_transaction($data) {
     global $db;
 
@@ -120,23 +123,6 @@ function create_transaction($data) {
     $product_price = intval($data['product_price']);
     $discount = isset($data['discount']) ? intval($data['discount']) : 0;
     $total_price = $product_price - $discount;
-
-    // Periksa stok produk
-    $stmt = $db->prepare("SELECT stok FROM products WHERE id = ?");
-    $stmt->execute([$product_id]);
-    $stok = $stmt->fetchColumn();
-
-    if ($stok <= 0) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Stok produk habis'
-        ]);
-        return;
-    }
-
-    // Kurangi stok produk
-    $stmt = $db->prepare("UPDATE products SET stok = stok - 1 WHERE id = ?");
-    $stmt->execute([$product_id]);
 
     if ($total_price < 0) {
         $total_price = 0;
@@ -177,7 +163,7 @@ function create_transaction($data) {
         $snap_url = \Midtrans\Snap::createTransaction($transaction)->redirect_url;
 
         $stmt = $db->prepare("INSERT INTO transaksi (order_id, product_id, product_name, price, tanggal, status) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$order_id, $product_id, $product_name, $total_price, date("Y-m-d"), 'pending']);
+        $stmt->execute([$order_id, $product_id, $product_name, $total_price, date("Y-m-d"), 'success']);
 
         echo json_encode([
             'success' => true,
@@ -197,41 +183,19 @@ function create_transaction($data) {
 function midtrans_notification() {
     global $db;
 
-    $notification = new \Midtrans\Notification();
+    // Ambil notifikasi dari Midtrans
+    $notif = new \Midtrans\Notification();
 
-    error_log("Received notification: " . json_encode($notification));
-
-    $order_id = $notification->order_id;
-    $transaction_status = $notification->transaction_status;
-    $fraud_status = $notification->fraud_status;
-
-    error_log("Transaction status: $transaction_status, Fraud status: $fraud_status");
-
-    $new_status = 'pending';  // Default status
-
-    if ($transaction_status == 'capture') {
-        if ($fraud_status == 'challenge') {
-            $new_status = 'challenge';
-        } else if ($fraud_status == 'accept') {
-            $new_status = 'success';
-        }
-    } else if ($transaction_status == 'settlement') {
-        $new_status = 'success';
-    } else if ($transaction_status == 'cancel' || $transaction_status == 'deny' || $transaction_status == 'expire') {
-        $new_status = 'failure';
-    } else if ($transaction_status == 'pending') {
-        $new_status = 'pending';
-    }
+    $order_id = $notif->order_id;
+    $transaction_status = $notif->transaction_status;
 
     try {
+        // Perbarui status transaksi di database berdasarkan notifikasi Midtrans
         $stmt = $db->prepare("UPDATE transaksi SET status = ? WHERE order_id = ?");
-        $stmt->execute([$new_status, $order_id]);
+        $stmt->execute([$transaction_status, $order_id]);
 
-        error_log("Transaction status updated to: $new_status for order_id: $order_id");
-
-        echo "Transaction status updated to: " . $new_status;
+        echo json_encode(["success" => true]);
     } catch (Exception $e) {
-        error_log("Error updating transaction status: " . $e->getMessage());
-        http_response_code(500);
+        echo json_encode(["error" => $e->getMessage()]);
     }
 }
