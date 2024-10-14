@@ -1,6 +1,5 @@
 <?php
 require 'function.php';
-require 'cek.php';
 ?>
 <!doctype html>
 <html lang="en">
@@ -18,15 +17,25 @@ require 'cek.php';
             font-family: 'Poppins', sans-serif;
         }
         .container-index {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
         }
         .product-list {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 20px;
+        }
+        .product {
+            background-color: #2b2d42;
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
         }
         .product {
             background-color: #2b2d42;
@@ -59,6 +68,7 @@ require 'cek.php';
         .product button:hover {
             background-color: #b0b0b0;
         }
+        
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.5);
         }
@@ -147,7 +157,7 @@ require 'cek.php';
             </button>
             </div>
             <div class="content">
-                <div class="product-list" id="product-list">
+            <div class="product-list" id="product-list">
                 <?php foreach ($products as $product): ?>
                     <div class="product">
                         <h2><?php echo htmlspecialchars($product['name']); ?></h2>
@@ -156,7 +166,7 @@ require 'cek.php';
                         <button onclick="showPaymentModal(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars($product['name']); ?>', <?php echo $product['price']; ?>, <?php echo $product['discount']; ?>)">Buy</button>
                     </div>
                 <?php endforeach; ?>
-                </div>
+            </div>
                 <div class="container-qrcode" style="display: contents;">
                     <div id="qrcode" class="qrcode"></div>
             </div>
