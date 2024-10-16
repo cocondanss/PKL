@@ -31,6 +31,9 @@ try {
                 echo json_encode(["error" => "Missing action in request"]);
             }
             break;
+        case 'check_payment_status':
+            check_payment_status($data);
+            break;
         default:
             header("HTTP/1.0 405 Method Not Allowed");
             echo json_encode(["error" => "Invalid request method"]);
@@ -138,7 +141,7 @@ function create_transaction($data) {
     $item_details = array(
         array(
             'id' => $product_id,
-            'price' => $product_price,
+            'price' => $total_price,
             'quantity' => 1,
             'name' => $product_name
         )
@@ -151,29 +154,83 @@ function create_transaction($data) {
         'phone' => "081234567890",
     );
 
-    $transaction = array(
-        'transaction_details' => $transaction_details,
-        'item_details' => $item_details,
-        'customer_details' => $customer_details,
-        'enabled_payments' => array('other_qris'),
-    );
-
     try {
-        $snap_token = \Midtrans\Snap::getSnapToken($transaction);
-        $snap_url = \Midtrans\Snap::createTransaction($transaction)->redirect_url;
+        $params = array(
+            'payment_type' => 'qris',
+            'transaction_details' => $transaction_details,
+            'item_details' => $item_details,
+            'customer_details' => $customer_details
+        );
+
+        $qris_response = \Midtrans\CoreApi::charge($params);
+
+        if (isset($qris_response->actions)) {
+            foreach ($qris_response->actions as $action) {
+                if ($action->name == 'generate-qr-code') {
+                    $qr_code_url = $action->url;
+                    break;
+                }
+            }
+        }
+
+        if (!isset($qr_code_url)) {
+            throw new Exception("QR code URL not found in the response");
+        }
 
         $stmt = $db->prepare("INSERT INTO transaksi (order_id, product_id, product_name, price, tanggal, status) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$order_id, $product_id, $product_name, $total_price, date("Y-m-d"), 'success']);
+        $stmt->execute([$order_id, $product_id, $product_name, $total_price, date("Y-m-d"), 'pending']);
 
         echo json_encode([
             'success' => true,
-            'snap_token' => $snap_token,
-            'snap_url' => $snap_url
+            'qr_code_url' => $qr_code_url
         ]);
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         echo json_encode([
             'success' => false,
             'message' => $e->getMessage()
+        ]);
+    }
+}
+
+function check_payment_status($data) {
+    global $db;
+
+    if (!isset($data['transaction_id'])) {
+        echo json_encode(["success" => false, "message" => "Missing transaction ID"]);
+        return;
+    }
+
+    $transaction_id = $data['transaction_id'];
+
+    try {
+        $status = \Midtrans\Transaction::status($transaction_id);
+        
+        // Periksa apakah $status adalah objek atau array
+        if (is_object($status)) {
+            $transaction_status = $status->transaction_status;
+        } elseif (is_array($status)) {
+            $transaction_status = $status['transaction_status'] ?? null;
+        } else {
+            throw new Exception("Unexpected response type from Midtrans");
+        }
+    
+        // Periksa apakah $transaction_status ada
+        if ($transaction_status === null) {
+            throw new Exception("Transaction status not found in Midtrans response");
+        }
+    
+        // Update the status in your database
+        $stmt = $db->prepare("UPDATE transaksi SET status = ? WHERE order_id = ?");
+        $stmt->execute([$transaction_status, $transaction_id]);
+    
+        echo json_encode([
+            "success" => true,
+            "status" => $transaction_status
+        ]);
+    } catch (\Exception $e) {
+        echo json_encode([
+            "success" => false,
+            "message" => $e->getMessage()
         ]);
     }
 }
