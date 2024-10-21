@@ -21,6 +21,10 @@ require_once 'vendor/autoload.php';
 \Midtrans\Config::$is3ds = true;
 
 
+// Add this query to create 'visible' column if it doesn't exist
+$alter_table_query = "ALTER TABLE products ADD COLUMN IF NOT EXISTS visible TINYINT(1) DEFAULT 1";
+mysqli_query($conn, $alter_table_query);
+
 
 //menambah user baru
     if (isset($_POST['TambahUser'])) {
@@ -42,14 +46,13 @@ require_once 'vendor/autoload.php';
 // Fungsi untuk menambah voucher
 if (isset($_POST['TambahVoucher'])) {
     $code_prefix = $_POST['code_prefix'];
-    $discount_amount = $_POST['discount_amount'];
     $is_used = $_POST['is_used'];
     $voucher_count = $_POST['voucher_count'];
 
     for ($i = 0; $i < $voucher_count; $i++) {
         $random_number = mt_rand(1000000000, 9999999999);
         $unique_code = $code_prefix . '' . $random_number;
-        $addtotable = mysqli_query($conn, "insert into vouchers (code, discount_amount, is_used) values('$unique_code', '$discount_amount', '$is_used')");
+        $addtotable = mysqli_query($conn, "insert into vouchers (code, is_used) values('$unique_code', '$is_used')");
     }
 
     if ($addtotable) {
@@ -64,13 +67,12 @@ if (isset($_POST['TambahVoucher'])) {
     if (isset($_POST['simpan_ekspor'])) {
     // Kode untuk menyimpan data ke database Anda
     $code_prefix = $_POST['code_prefix'];
-    $discount_amount = $_POST['discount_amount'];
     $voucher_count = $_POST['voucher_count'];
   
     for ($i=0; $i < $voucher_count; $i++) { 
       $random_number = mt_rand(1000000000, 9999999999);
       $unique_code = $code_prefix . '' . $random_number;
-      $addtotable = mysqli_query($conn,"insert into vouchers (code, discount_amount, is_used) values('$unique_code','$discount_amount','0')");
+      $addtotable = mysqli_query($conn,"insert into vouchers (code, is_used) values('$unique_code','0')");
     }
   
     // Kode untuk mengekspor data ke file teks
@@ -84,10 +86,9 @@ if (isset($_POST['TambahVoucher'])) {
     $ambilsemuadatavoucher = mysqli_query($conn, "SELECT * FROM vouchers");
     while($data = mysqli_fetch_array($ambilsemuadatavoucher)){
       $code = $data['code'];
-      $discount_amount = $data['discount_amount'];
       $status = ($data['is_used'] == 0) ? 'Belum Digunakan' : 'Sudah Digunakan';
       $used_at = $data['used_at'] ? $data['used_at'] : '-';
-      $fileContent .= $code . ' | ' . $discount_amount . ' | ' . $status . ' | ' . $used_at . "\n";
+      $fileContent .= $code . ' | ' . $status . ' | ' . $used_at . "\n";
     }
 
         // Kode untuk mengunduh file yang diekspor

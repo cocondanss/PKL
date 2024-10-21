@@ -1,9 +1,15 @@
 <?php
 require 'function.php';
+
+// Modify the query to only fetch visible products
+$query = "SELECT * FROM products WHERE visible = 1";
+$result = mysqli_query($conn, $query);
+$products = mysqli_fetch_all($result, MYSQLI_ASSOC);
 ?>
+
+
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
@@ -208,7 +214,7 @@ require 'function.php';
             justify-content: center;
             align-items: center;
             min-width: 120px;
-            margin-right: 40%;
+            margin-right: 30%;
         }
 
         #btn-check {
@@ -226,7 +232,6 @@ require 'function.php';
         }
     </style>
 </head>
-
 <body>
     <div class="container-index">
         <div class="header-index">
@@ -247,16 +252,13 @@ require 'function.php';
                             <p id="description-<?php echo $product['id']; ?>">
                                 <?php echo htmlspecialchars($product['description']); ?>
                             </p>
-                            <button
-                                onclick="showPaymentModal(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars($product['name']); ?>', <?php echo $product['price']; ?>, <?php echo $product['discount']; ?>)">Buy</button>
+                            <button onclick="showPaymentModal(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars($product['name']); ?>', <?php echo $product['price']; ?>, <?php echo $product['discount']; ?>)">Buy</button>
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <div class="container-qrcode" style="display: contents;">
-                    <div id="qrcode" class="qrcode"></div>
-                </div>
             </div>
         </div>
+    </div>
         <div class="modal fade" id="keypadModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -374,7 +376,6 @@ require 'function.php';
                         if (existingModal) {
                             existingModal.remove();
                         }
-
                         // Buat elemen modal baru
                         const modalHTML = `
                         <div class="modal fade qr-modal" id="qrCodeModal" tabindex="-1" aria-hidden="true">
@@ -390,8 +391,8 @@ require 'function.php';
                                         <p class="qr-instructions">*scan QR code ini untuk melakukan pembayaran</p>
                                         <div style="display: flex; justify-content: center;">
                                             <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Batal</button>
-                                            <button type="button" onclick="checkPaymentStatus()"  class="btn" id="btn-check">cek</button>
-                                            <button type="button"   class="btn btn-check" >cek</button>
+                                            <button type="button" onclick="checkPaymentStatus()"  class="btn" id="btn-check">Cek</button>
+                                            <button type="button"   class="btn btn-check" >Cek</button>
                                         </div>
                                         <div class="status-message mt-3"></div>
                                     </div>
@@ -530,5 +531,4 @@ require 'function.php';
 
         </script>
 </body>
-
 </html>
