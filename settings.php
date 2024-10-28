@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <main>
                 <div class="container-fluid">
                     <h1>Settings Management</h1>
-                    <br>
+                    
                     <?php if (isset($message)): ?>
                         <div class="alert alert-<?php echo $success ? 'success' : 'danger'; ?> alert-dismissible fade show">
                             <?php echo $message; ?>
