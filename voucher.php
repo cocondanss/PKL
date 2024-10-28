@@ -89,26 +89,26 @@ if (isset($_POST['TambahVoucherManual'])) {
             <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                         <div class="sb-sidenav-menu">
                             <div class="nav">
-                            <a class="nav-link" href="user.php">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                User
-                            </a>
-                            <a class="nav-link" href="index.php">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                Produk
-                            </a>
-                            <a class="nav-link" href="transaksi.php">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                Transaksi
-                            </a>
-                            <a class="nav-link" href="voucher.php">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                Voucher
-                            </a>
-                            <a class="nav-link" href="logout.php">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                Logout
-                            </a>
+                                <a class="nav-link" href="user.php">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                    User
+                                </a>
+                                <a class="nav-link" href="index.php">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                    Produk
+                                </a>
+                                <a class="nav-link" href="transaksi.php">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                    Transaksi
+                                </a>
+                                <a class="nav-link" href="voucher.php">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                    Voucher
+                                </a>
+                                <a class="nav-link" href="logout.php">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                    Logout
+                                </a>
                             </div>
                         </div>
                     </nav>
@@ -181,7 +181,6 @@ if (isset($_POST['TambahVoucherManual'])) {
                                                     $i = 1;
                                                     while($data = mysqli_fetch_array($ambilsemuadatavoucher)){
                                                         $code = $data['code'];
-                                                        $discount_amount = $data['discount_amount'];
                                                         $is_used = $data['is_used']; // <-- Penambahan definisi variabel $is_used
                                                         $id = $data['id'];
                                                         $created_at = $data['created_at'];
@@ -191,7 +190,6 @@ if (isset($_POST['TambahVoucherManual'])) {
                                                     <tr>
                                                         <td><?=$i++;?></td>
                                                         <td><?=$code;?></td>
-                                                        <td><?=$discount_amount;?></td>
                                                         <td><?=$status;?></td>
                                                         <td><?=$created_at;?></td>
                                                         <td><?=$used_at ? $used_at : '-';?></td>

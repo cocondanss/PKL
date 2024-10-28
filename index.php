@@ -31,7 +31,7 @@ require 'cek.php';
                                     <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                                     User
                                 </a>
-                                <a class="nav-link" href="index.php">
+                                <a class="nav-link active" href="index.php">
                                     <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                                     Produk
                                 </a>
