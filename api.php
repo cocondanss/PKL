@@ -120,9 +120,6 @@ function create_transaction($data) {
         return;
     }
 
-    // Ubah pembuatan order_id menjadi lebih unik
-    $order_id = 'TRX-' . time() . '-' . uniqid();  // Menggabungkan prefix, timestamp, dan uniqid
-    
     $product_id = $data['product_id'];
     $product_name = $data['product_name'];
     $product_price = intval($data['product_price']);
