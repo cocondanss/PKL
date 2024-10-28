@@ -4,15 +4,13 @@ session_start();
 $conn = mysqli_connect("localhost", "root", "", "framee");
 
 
-// Fungsi untuk cek pin
 function cek_pin($pin) {
     global $conn;
-    $query = "SELECT * FROM pin WHERE pin = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $pin);
+    $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_key = 'keypad_pin'");
     $stmt->execute();
     $result = $stmt->get_result();
-    return $result->num_rows > 0;
+    $row = $result->fetch_assoc();
+    return $pin === $row['setting_value'];
 }
 
 // Fungsi untuk login

@@ -120,6 +120,9 @@ function create_transaction($data) {
         return;
     }
 
+    // Ubah pembuatan order_id menjadi lebih unik
+    $order_id = 'TRX-' . time() . '-' . uniqid();  // Menggabungkan prefix, timestamp, dan uniqid
+    
     $product_id = $data['product_id'];
     $product_name = $data['product_name'];
     $product_price = intval($data['product_price']);
@@ -129,8 +132,6 @@ function create_transaction($data) {
     if ($total_price < 0) {
         $total_price = 0;
     }
-
-    $order_id = time();
 
     $transaction_details = array(
         'order_id' => $order_id,
@@ -176,7 +177,8 @@ function create_transaction($data) {
             throw new Exception("QR code URL not found in the response");
         }
 
-        $stmt = $db->prepare("INSERT INTO transaksi (order_id, product_id, product_name, price, tanggal, status) VALUES (?, ?, ?, ?, ?, ?)");
+        // Tambahkan kolom created_at untuk timestamp
+        $stmt = $db->prepare("INSERT INTO transaksi (order_id, product_id, product_name, price, tanggal, status, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
         $stmt->execute([$order_id, $product_id, $product_name, $total_price, date("Y-m-d"), 'pending']);
 
         echo json_encode([
