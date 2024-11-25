@@ -1,0 +1,19 @@
+/* Add this to your style.css file */
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+    font-weight: 500;
+}
+
+.nav-link {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Tambahan untuk memastikan ikon juga terlihat lebih jelas saat aktif */
+.nav-link.active .sb-nav-link-icon {
+    color: #fff;
+}
