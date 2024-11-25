@@ -107,7 +107,7 @@ require 'cek.php';
                                         </thead>
                                         <tbody>
                                         <?php
-                                            $ambilsemuadatatransaksi = mysqli_query($conn, "SELECT * FROM transaksi ORDER BY created_at DESC");
+                                            $ambilsemuadatatransaksi = mysqli_query($conn, "select * from transaksi");
                                             $i = 1;
                                             while($data=mysqli_fetch_array($ambilsemuadatatransaksi)){
                                                 $order_id = $data['order_id'];

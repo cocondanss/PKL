@@ -23,10 +23,6 @@ require_once 'vendor/autoload.php';
 \Midtrans\Config::$is3ds = true;
 
 
-// Add this query to create 'visible' column if it doesn't exist
-$alter_table_query = "ALTER TABLE products ADD COLUMN IF NOT EXISTS visible TINYINT(1) DEFAULT 1";
-mysqli_query($conn, $alter_table_query);
-
 
 //menambah user baru
     if (isset($_POST['TambahUser'])) {
@@ -303,16 +299,16 @@ if (isset($_POST['simpan_ekspor'])) {
     exit;
   }
 
-    //hapus voucher yang sudah digunakan
-    if (isset($_POST['hapus_voucher_digunakan'])) {
-        $hapus_voucher = mysqli_query($conn, "DELETE FROM vouchers2 WHERE is_used = 1");
-        if ($hapus_voucher) {
-            header("location:voucher.php");
-        } else {
-            echo 'Gagal menghapus voucher';
-            header('location:voucher.php');
-        }
+//hapus voucher yang sudah digunakan
+if (isset($_POST['hapus_voucher_digunakan'])) {
+    $hapus_voucher = mysqli_query($conn, "DELETE FROM vouchers WHERE is_used = 1");
+    if ($hapus_voucher) {
+        header("location:voucher.php");
+    } else {
+        echo 'Gagal menghapus voucher';
+        header('location:voucher.php');
     }
+}
 
 
 // Fetch products from database

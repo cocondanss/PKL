@@ -1,147 +1,6 @@
 <?php
 require 'function.php';
-
-// Modify the query to only fetch visible products
-$query = "SELECT * FROM products WHERE visible = 1";
-$result = mysqli_query($conn, $query);
-$products = mysqli_fetch_all($result, MYSQLI_ASSOC);
-
-if (!$conn) {
-    die("Koneksi gagal: " . mysqli_connect_error());
-}
-
-
-// Fungsi untuk menerapkan voucher
-function applyVoucher($voucherCode, $price) {
-    global $conn;
-
-    $stmt = $conn->prepare("SELECT * FROM vouchers2 WHERE code = ?");
-    if (!$stmt) {
-        return array(
-            'original_price' => $price,
-            'discounted_price' => $price,
-            'has_discount' => false
-        );
-    }
-
-    $stmt->bind_param("s", $voucherCode);
-    if (!$stmt->execute()) {
-        return array(
-            'original_price' => $price,
-            'discounted_price' => $price,
-            'has_discount' => false
-        );
-    }
-
-    $queryResult = $stmt->get_result();
-    if ($row = $queryResult->fetch_assoc()) {
-        if ($row['one_time_use'] == 1 && $row['used_at'] !== null) {
-            return array(
-                'original_price' => $price,
-                'discounted_price' => $price,
-                'has_discount' => false
-            );
-        }
-
-        $discountAmount = $row['discount_amount'];
-        
-        // Cek apakah diskon dalam bentuk persentase atau nominal
-        if ($discountAmount <= 100) {
-            // Diskon persentase
-            $discountedPrice = $price - ($price * ($discountAmount / 100));
-        } else {
-            // Diskon nominal
-            $discountedPrice = max($price - $discountAmount, 0);
-        }
-
-        if ($discountedPrice < $price) {
-            return array(
-                'original_price' => $price,
-                'discounted_price' => $discountedPrice,
-                'has_discount' => true
-            );
-        }
-    }
-
-    return array(
-        'original_price' => $price,
-        'discounted_price' => $price,
-        'has_discount' => false
-    );
-}
-
-// Handle AJAX request untuk voucher
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['voucher_code'])) {
-    header('Content-Type: application/json');
-    
-    $response = array(
-        'success' => false,
-        'message' => '',
-        'products' => array()
-    );
-    
-    try {
-        $voucherCode = $_POST['voucher_code'];
-        
-        // Cek voucher
-        $stmt = $conn->prepare("SELECT * FROM vouchers2 WHERE code = ?");
-        $stmt->bind_param("s", $voucherCode);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($row = $result->fetch_assoc()) {
-            // Cek apakah voucher sudah digunakan
-            if ($row['one_time_use'] == 1 && $row['used_at'] !== null) {
-                $response['message'] = 'Voucher sudah digunakan';
-                echo json_encode($response);
-                exit;
-            }
-
-            // Terapkan voucher ke semua produk
-            foreach ($products as $product) {
-                $priceInfo = applyVoucher($voucherCode, $product['price']);
-                $response['products'][] = array(
-                    'id' => $product['id'],
-                    'original_price' => $product['price'],
-                    'discounted_price' => $priceInfo['discounted_price'],
-                    'has_discount' => $priceInfo['has_discount']
-                );
-            }
-            
-            // Update status voucher saat berhasil digunakan
-            $currentTime = date('Y-m-d H:i:s');
-            $updateStmt = $conn->prepare("UPDATE vouchers2 SET used_at = ?, is_used = 1 WHERE code = ?");
-            $updateStmt->bind_param("ss", $currentTime, $voucherCode);
-            $updateStmt->execute();
-            
-            // Simpan voucher code dalam session untuk digunakan nanti
-            $_SESSION['pending_voucher'] = $voucherCode;
-            
-            $response['success'] = true;
-            $response['message'] = 'Voucher berhasil diterapkan';
-        } else {
-            $response['message'] = 'Voucher tidak valid';
-        }
-        
-    } catch (Exception $e) {
-        $response['message'] = $e->getMessage();
-        error_log("Error in voucher processing: " . $e->getMessage());
-    }
-    
-    echo json_encode($response);
-    exit;
-}
-$voucherCode = '';
-$voucherMessages ='';
-
-// Ambil data produk
-$produk = mysqli_query($conn, "SELECT * FROM products");
-if (!$produk) {
-    die("Query gagal: " . mysqli_error($conn));
-}
 ?>
-
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -561,11 +420,13 @@ if (!$produk) {
             background-color: #2b2d42;
             color: white;
             border: none;
-        }
-
-        .qr-modal .btn-cancel:hover {
-            background-color: #1a1b2e;
-            transform: translateY(-2px);
+            padding: 10px 30px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 120px;
+            margin-right: 40%;
         }
 
         .qr-modal #btn-check {
@@ -650,63 +511,35 @@ if (!$produk) {
     </style>
 </head>
 <body>
-<div class="container-submit-index">
-    <div class="content-submit">
-        <h1 class="product-list-title">Product List</h1>
-        <div class="container-button">
-            <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#keypadModal" style="position: absolute; right: 30px; top: 30px; background: none; border: none;">
-                <i class="fas fa-lock" style="font-size: 25px; color: rgba(0, 0, 0, 0.2);"></i>
-            </button>
-        </div>
-        <div id="voucher-message-container">
-            <!-- <?php
-            // foreach ($voucherMessages as $message) {
-            //     echo $message;
-            // }
-            ?> -->
-        </div>
-        <div class="product-list">
-            <div class="products-container"> 
-                <?php 
-                $counter = 0;
-                foreach ($products as $item): 
-                    $originalPrice = $item['price']; 
-                    $discountedPrice = applyVoucher($voucherCode, $originalPrice); 
-                    if ($counter < 3):
-                ?> 
-                  <div class="product-submit"> 
-                        <h2><?php echo htmlspecialchars($item['name']); ?></h2> 
-                        <div id="price-container-<?php echo $item['id']; ?>" class="price-container">
-                            <?php 
-                            $priceInfo = applyVoucher($voucherCode, $item['price']);
-                            if (is_array($priceInfo) && isset($priceInfo['has_discount']) && $priceInfo['has_discount']): 
-                            ?>
-                                <p class="original-price">Rp <?php echo number_format($priceInfo['original_price'], 0, ',', '.'); ?></p>
-                                <p class="discounted-price">Rp <?php echo number_format($priceInfo['discounted_price'], 0, ',', '.'); ?></p>
-                            <?php else: ?>
-                                <p>Rp <?php echo number_format(is_array($priceInfo) ? $priceInfo['original_price'] : $item['price'], 0, ',', '.'); ?></p>
-                            <?php endif; ?>
+    <div class="container-index">
+        <div class="header-index">
+            <div class="container-button">
+                <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#keypadModal"
+                    style="position: absolute; right: 30px; top: 30px; background: none; border: none;">
+                    <i class="fas fa-lock" style="font-size: 20px; color: rgba(0, 0, 0, 0.2);"></i>
+                </button>
+            </div>
+            <div class="content">
+                <div class="product-list" id="product-list">
+                    <?php foreach ($products as $product): ?>
+                        <div class="product">
+                            <h2><?php echo htmlspecialchars($product['name']); ?></h2>
+                            <p id="price-<?php echo $product['id']; ?>">Rp
+                                <?php echo number_format($product['price'], 0, ',', '.'); ?>
+                            </p>
+                            <p id="description-<?php echo $product['id']; ?>">
+                                <?php echo htmlspecialchars($product['description']); ?>
+                            </p>
+                            <button
+                                onclick="showPaymentModal(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars($product['name']); ?>', <?php echo $product['price']; ?>, <?php echo $product['discount']; ?>)">Buy</button>
                         </div>
-                        <p id="description-<?php echo $item['id']; ?>"> 
-                            <?php echo htmlspecialchars($item['description']); ?> 
-                        </p> 
-                        <button onclick="showPaymentModal(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['name']); ?>', <?php echo is_array($priceInfo) ? $priceInfo['discounted_price'] : $item['price']; ?>)">Buy</button> 
-                    </div>
-                <?php 
-                    endif;
-                    $counter++;
-                endforeach; 
-                ?>
-                <div class="voucher-form">
-                    <form id="voucher-form" method="POST">
-                        <input type="text" name="voucher_code" placeholder="Masukkan kode voucher">
-                        <button type="submit">Terapkan Voucher</button>
-                    </form>
+                    <?php endforeach; ?>
+                </div>
+                <div class="container-qrcode" style="display: contents;">
+                    <div id="qrcode" class="qrcode"></div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
         <div class="modal fade" id="keypadModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -835,25 +668,22 @@ if (!$produk) {
                                             <h5 class="modal-title">Scan QR Code untuk Pembayaran</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <div class="modal-body">
-                                            <div class="qr-code-container">
-                                                <img id="qrCodeImage" src="" alt="QR Code" class="qr-code-image">
-                                            </div>
-                                            <div id="countdown"></div>
-                                            <div class="status-message"></div>
-                                            <div class="button-container">
-                                                <button type="button" class="btn btn-cancel" id="btn-cancel" onclick="cancelTransaction()">
-                                                    Batalkan Transaksi
-                                                </button>
-                                                <button type="button" class="btn" id="btn-check" onclick="checkPaymentStatus()">
-                                                    Cek Status Pembayaran
-                                                </button>
-                                            </div>
+                                        <div class="qr-code-container">
+                                            <img src="${response.qr_code_url}" alt="QR Code" class="qr-code-image">
                                         </div>
+                                        <p class="qr-instructions">*scan QR code ini untuk melakukan pembayaran</p>
+                                        <div style="display: flex; justify-content: center;">
+                                            <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Batal</button>
+                                            <button type="button" onclick="checkPaymentStatus()"  class="btn" id="btn-check">cek</button>
+                                            <button type="button"   class="btn btn-check" >cek</button>
+                                        </div>
+                                        <div class="status-message mt-3"></div>
                                     </div>
                                 </div>
                             </div>
-                        `;
+                        </div>
+                        `
+
                         // Tambahkan modal ke body
                         document.body.insertAdjacentHTML('beforeend', modalHTML);
                         

@@ -1,154 +1,62 @@
 <?php
-require 'function.php';
-require 'cek.php';
-
-function generateVoucherCode($length = 8) {
-    $characters = '0123456789';
-    $charactersLength = strlen($characters);
-    $randomString = '';
-    for ($i = 0; $i < $length; $i++) {
-        $randomString .= $characters[rand(0, $charactersLength - 1)];
-    }
-    return $randomString;
-}
-
-$voucherCode = generateVoucherCode(); // Buat kode voucher otomatis setiap kali halaman dibuka
-
-if (isset($_POST['TambahVoucherOtomatis'])) {
-    $voucherCode = $_POST['code_prefix'];
-    $voucherCount = $_POST['voucher_count'];
-    $voucherType = $_POST['voucherType'];
-    $nominalVoucher = $_POST['nominalVoucher'];
-    $diskonVoucher = $_POST['diskonVoucher'];
-
-    if ($voucherType == 'rupiah') {
-        $discountAmount = $nominalVoucher;
-    } elseif ($voucherType == 'diskon') {
-        $discountAmount = $diskonVoucher;
-    }
-
-    $query = "ALTER TABLE vouchers2 CHANGE id id INT AUTO_INCREMENT;";
-    mysqli_query($conn, $query);
-
-for ($i = 0; $i < $voucherCount; $i++) {
-    $voucherCode = generateVoucherCode();
-    $query = "INSERT INTO vouchers2 (code, discount_amount) VALUES ('$voucherCode', '$discountAmount')";
-    mysqli_query($conn, $query);
-}
-
-    unset($voucherCode);
-    unset($discountAmount);
-    $voucherCode = $_POST['code_prefix'];
-    // echo "<script>alert('Voucher berhasil ditambahkan');</script>";
-    header('Location: voucher.php');
-}
-if (isset($_POST['TambahVoucherManual'])) {
-    $manualCode = trim($_POST['manual_code']); // tambahkan trim() untuk menghilangkan spasi
-    $manualCode = mysqli_real_escape_string($conn, $manualCode); // tambahkan mysqli_real_escape_string() untuk menghindari SQL injection
-    $nominal = $_POST['nominal'];
-    $isFree = isset($_POST['is_free']) ? 1 : 0;
-    $oneTimeUse = isset($_POST['one_time_use']) ? 1 : 0;
-
-    $query = "INSERT INTO vouchers2 (code, discount_amount, is_free, one_time_use) VALUES ('$manualCode', '$nominal', '$isFree', '$oneTimeUse') ON DUPLICATE KEY UPDATE discount_amount = VALUES(discount_amount), is_free = VALUES(is_free), one_time_use = VALUES(one_time_use)";
-    mysqli_query($conn, $query);
-}
-
-    // echo "<script>alert('Voucher manual berhasil ditambahkan');</script>";
-
- if (isset($_POST['hapusvoucher'])) {
-    $id = $_POST['delete'];
-    $query = "DELETE FROM vouchers2 WHERE id IN (" . implode(',', $id) . ")";
-    mysqli_query($conn, $query);
-    header('Location: voucher.php');
-}
-?>
-
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
-    <title>Voucher</title>
-    <link href="css/style.css" rel="stylesheet" />
-    <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css" rel="stylesheet" crossorigin="anonymous" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" crossorigin="anonymous"></script>
-    <style>
-        .hidden { display: none; }
-    </style>                    
-</head>
-<body class="sb-nav-fixed">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand" href="index.php" style="color: white;">Daclen</a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0" id="sidebarToggle" href="#"><i class="fas fa-bars"></i></button>
-    </nav>
-    <div id="layoutSidenav">
-        <div id="layoutSidenav_nav">
-            <!-- Modifikasi pada bagian nav di index.php dan halaman lainnya -->
+    require 'function.php';
+    require 'cek.php';
+    ?>
+    <html lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+            <meta name="description" content="" />
+            <meta name="author" content="" />
+            <title>Voucher</title>
+            <link href="css/style.css" rel="stylesheet" />
+            <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css" rel="stylesheet" crossorigin="anonymous" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" crossorigin="anonymous"></script>
+        </head>
+        <body class="sb-nav-fixed">
+            <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+                <a class="navbar-brand" href="index.php" style="color: white;">Daclen</a>
+                <button class="btn btn-link btn-sm order-1 order-lg-0" id="sidebarToggle" href="#"><i class="fas fa-bars"></i></button>
+            </nav>
+            <div id="layoutSidenav">
+                <div id="layoutSidenav_nav">
                     <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                         <div class="sb-sidenav-menu">
                             <div class="nav">
-                                <?php
-                                // Dapatkan nama file halaman saat ini
-                                $current_page = basename($_SERVER['PHP_SELF']);
-                                
-                                // Array item menu dengan file dan ikon yang sesuai
-                                $menu_items = [
-                                    'user' => ['file' => 'user.php', 'icon' => 'fas fa-tachometer-alt', 'text' => 'User'],
-                                    'produk' => ['file' => 'index.php', 'icon' => 'fas fa-tachometer-alt', 'text' => 'Produk'],
-                                    'transaksi' => ['file' => 'transaksi.php', 'icon' => 'fas fa-tachometer-alt', 'text' => 'Transaksi'],
-                                    'voucher' => ['file' => 'voucher.php', 'icon' => 'fas fa-tachometer-alt', 'text' => 'Voucher'],
-                                    'settings' => ['file' => 'settings.php', 'icon' => 'fas fa-tachometer-alt', 'text' => 'Settings'],
-                                    'logout' => ['file' => 'logout.php', 'icon' => 'fas fa-tachometer-alt', 'text' => 'Logout']
-                                ];
-
-                                // Generate menu items
-                                foreach ($menu_items as $key => $item) {
-                                    // Periksa apakah halaman saat ini adalah index.php dan item menu adalah produk
-                                    $isActive = ($current_page === $item['file']) || 
-                                            ($current_page === 'index.php' && $key === 'produk');
-                                    
-                                    $activeClass = $isActive ? 'active' : '';
-                                    
-                                    echo '<a class="nav-link ' . $activeClass . '" href="' . $item['file'] . '">
-                                            <div class="sb-nav-link-icon"><i class="' . $item['icon'] . '"></i></div>
-                                            ' . $item['text'] . '
-                                        </a>';
-                                }
-                                ?>
+                            <a class="nav-link" href="user.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                User
+                            </a>
+                            <a class="nav-link" href="index.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Produk
+                            </a>
+                            <a class="nav-link" href="transaksi.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Transaksi
+                            </a>
+                            <a class="nav-link" href="voucher.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Voucher
+                            </a>
+                            <a class="nav-link" href="logout.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Logout
+                            </a>
                             </div>
                         </div>
                     </nav>
-
-                    <style>
-                    .nav-link.active {
-                        background-color: rgba(255, 255, 255, 0.1);
-                        color: #fff !important;
-                        font-weight: 500;
-                    }
-
-                    .nav-link {
-                        transition: background-color 0.2s ease-in-out;
-                    }
-
-                    .nav-link:hover {
-                        background-color: rgba(255, 255, 255, 0.05);
-                    }
-                    .nav-link.active .sb-nav-link-icon {
-                        color: #fff;
-                    }
-                    </style>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <div class="container-fluid">
-                    <form method="post" action="voucher.php">
-                        <h1 class="mt-4">Voucher</h1>
-                        <div class="card mb-4">
-                            <div class="card-header d-flex justify-content-start">
-                                <button type="button" class="btn btn-success mr-2" data-toggle="modal" data-target="#voucherModal">
-                                    Tambah Voucher otomatis
+                </div>
+                <div id="layoutSidenav_content">
+                    <main>
+                        <div class="container-fluid">
+                            <form method="post" action="voucher.php">
+                            <h1 class="mt-4">Voucher</h1>
+                            <div class="card mb-4">
+                            <div class="card-header">
+                                <button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal">
+                                    Tambah Voucher
                                 </button>
                                 <button type="button" class="btn btn-success mr-2" data-toggle="modal" data-target="#manualVoucherModal">
                                     Tambah Voucher Manual
@@ -182,114 +90,67 @@ if (isset($_POST['TambahVoucherManual'])) {
                                         </thead>
                                         <tbody>
                                                 <?php
-                                                   $ambilsemuadatavoucher = mysqli_query($conn, "SELECT * FROM vouchers2");
-                                                   $i = 1;
-                                                   while($data = mysqli_fetch_array($ambilsemuadatavoucher)){
-                                                       $code = $data['code'];
-                                                       $discount_amount = $data['discount_amount'];
-                                                       $is_used = $data['is_used'];
-                                                       $is_free = $data['is_free'];
-                                                       $one_time_use = $data['one_time_use'];
-                                                       $id = $data['id'];
-                                                       $created_at = $data['created_at'];
-                                                       $used_at = $data['used_at'];
-                                                       
-                                                       // Tentukan status berdasarkan used_at
-                                                       $status = ($used_at !== null) ? "Sudah digunakan" : "Belum digunakan";
-                                                       
-                                                       $isFreeDisplay = ($is_free == 1) ? "Ya" : "Tidak";
-                                                       $oneTimeUse = ($one_time_use == 1) ? "Ya" : "Tidak";
-                                                       
-                                                       // Jika voucher gratis, set discount_amount menjadi 0
-                                                       if ($is_free == 1) {
-                                                           $discount_amount = 0;
-                                                       }
-                                                   
-                                                       $voucherType = ($discount_amount > 100) ? 'rupiah' : 'diskon';
-                                                   ?>
-                                                   <tr>
-                                                       <td><?=$i++;?></td>
-                                                       <td><?=$code;?></td>
-                                                       <td>
-                                                           <?php if ($is_free == 1): ?>
-                                                               0
-                                                           <?php elseif ($voucherType == 'diskon'): ?>
-                                                               <?= $discount_amount . '%' ?>
-                                                           <?php else: ?>
-                                                               <?= 'Rp ' . number_format($discount_amount, 0, ',', '.') ?>
-                                                           <?php endif; ?>
-                                                       </td>
-                                                       <td><?=$status;?></td>
-                                                       <td><?=$isFreeDisplay;?></td>
-                                                       <td><?=$oneTimeUse;?></td>
-                                                       <td><?=$created_at;?></td>
-                                                       <td><?= $used_at ? $used_at : '-'; ?></td>
-                                                       <td><input type="checkbox" name="delete[]" value="<?=$id;?>"></td>
-                                                   </tr>
-                                            <?php
-                                            }
-                                            ?>
-                                        </tbody>
-                                    </table>
+                                                    $ambilsemuadatavoucher = mysqli_query($conn, "SELECT * FROM vouchers");
+                                                    $i = 1;
+                                                    while($data = mysqli_fetch_array($ambilsemuadatavoucher)){
+                                                        $code = $data['code'];
+                                                        $discount_amount = $data['discount_amount'];
+                                                        $is_used = $data['is_used']; // <-- Penambahan definisi variabel $is_used
+                                                        $id = $data['id'];
+                                                        $created_at = $data['created_at'];
+                                                        $used_at = $data['used_at'];
+                                                        $status = ($is_used == 1) ? "Sudah digunakan" : "Belum digunakan";
+                                                ?>
+                                                    <tr>
+                                                        <td><?=$i++;?></td>
+                                                        <td><?=$code;?></td>
+                                                        <td><?=$discount_amount;?></td>
+                                                        <td><?=$status;?></td>
+                                                        <td><?=$created_at;?></td>
+                                                        <td><?=$used_at ? $used_at : '-';?></td>
+                                                        <td><input type="checkbox" name="delete[]" value="<?=$id;?>"></td>
+                                                    </tr>
+                                                <?php
+                                                }
+                                                ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </form>
+                            </div>
+                        </div>
+                    </main>
+                    <footer class="py-4 bg-light mt-auto">
+                        <div class="container-fluid">
+                            <div class="d-flex align-items-center justify-content-between small">
+                                <div class="text-muted">Copyright &copy; Your Website 2020</div>
+                                <div>
+                                    <a href="#">Privacy Policy</a>
+                                    &middot;
+                                    <a href="#">Terms &amp; Conditions</a>
                                 </div>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            </main>
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2020</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                            &middot;
-                            <a href="#">Terms &amp; Conditions</a>
                         </div>
-                    </div>
+                    </footer>
                 </div>
-            </footer>
-        </div>
-        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-        <script src="js/scripts.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
-        <script src="assets/demo/chart-area-demo.js"></script>
-        <script src="assets/demo/chart-bar-demo.js"></script>
-        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
-        <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
-        <script src="assets/demo/datatables-demo.js"></script>
-    </div>
-
-    <!-- input Tambah Voucher otomatis -->
-
-    <div class="modal fade" id="voucherModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title">Tambah Voucher otomatis</h4>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <form method="post">
-                    <div class="modal-body">
-                    <label for="code_prefix">Kode Voucher:</label>
-                        <!-- Kode Voucher diisi otomatis -->
-                        <input type="text" name="code_prefix" class="form-control" value="<?= $voucherCode; ?>" readonly><br>
-                        
-                        <input type="number" name="voucher_count" placeholder="Jumlah Voucher" class="form-control" min="1" required> <br>
-
-                    <label>Jenis Voucher:</label><br>
-                    <label><input type="radio" name="voucherType" value="rupiah" id="rupiahRadio" required> Rupiah</label>
-                    <label><input type="radio" name="voucherType" value="diskon" id="diskonRadio" required> Diskon</label><br><br>
-
-                    <div id="nominalInput" class="hidden">
-                        <label for="nominalVoucher">Nominal Voucher (Rupiah):</label>
-                        <input type="number" name="nominalVoucher" id="nominalVoucher" class="form-control" step="1000"><br>
-                    </div>
-                    <div id="diskonInput" class="hidden">
-                        <label for="diskonVoucher">Diskon (%):</label>
-                        <input type="number" name="diskonVoucher" id="diskonVoucher" class="form-control" min="1" max="100">
-                        <span>%</span><br><br>
+            </div>
+            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+            <script src="js/scripts.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+            <script src="assets/demo/chart-area-demo.js"></script>
+            <script src="assets/demo/chart-bar-demo.js"></script>
+            <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
+            <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
+            <script src="assets/demo/datatables-demo.js"></script>
+            <!-- The Modal -->
+            <div class="modal fade" id="myModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Tambah Voucher</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
                     <button type="submit" class="btn btn-primary" name="TambahVoucherOtomatis">Simpan</button>
                 </div>
