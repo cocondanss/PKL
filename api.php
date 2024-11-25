@@ -65,58 +65,58 @@ function create_transaction($data) {
         return;
     }
 
+    $product_id = $data['product_id'];
+    $product_name = $data['product_name'];
+    $product_price = intval($data['product_price']);
+    $discount = isset($data['discount']) ? intval($data['discount']) : 0;
+    $total_price = $product_price - $discount;
+
+    if ($total_price < 0) {
+        $total_price = 0;
+    }
+
+    $order_id = time();
+
+    $transaction_details = array(
+        'order_id' => $order_id,
+        'gross_amount' => $total_price
+    );
+
+    $item_details = array(
+        array(
+            'id' => $product_id,
+            'price' => $total_price,
+            'quantity' => 1,
+            'name' => $product_name
+        )
+    );
+
+    $customer_details = array(
+        'first_name' => "Pembeli",
+        'last_name' => "Satu",
+        'email' => "pembeli@example.com",
+        'phone' => "081234567890",
+    );
+
+    $params = array(
+        'payment_type' => 'qris',
+        'transaction_details' => $transaction_details,
+        'item_details' => $item_details,
+        'customer_details' => $customer_details
+    );
+
     try {
-        $order_id = 'TRX-' . time() . '-' . uniqid();
-        $product_id = $data['product_id'];
-        $product_name = $data['product_name'];
-        $product_price = intval($data['product_price']);
-        $discount = isset($data['discount']) ? intval($data['discount']) : 0;
-        $total_price = $product_price - $discount;
-        $status = 'pending';
-
-        $stmt = $db->prepare("INSERT INTO transaksi (order_id, product_id, product_name, price, status) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$order_id, $product_id, $product_name, $total_price, $status]);
-
-        if ($total_price < 0) {
-            $total_price = 0;
-        }
-
-        $transaction_details = array(
-            'order_id' => $order_id,
-            'gross_amount' => $total_price
-        );
-
-        $item_details = array(
-            array(
-                'id' => $product_id,
-                'price' => $total_price,
-                'quantity' => 1,
-                'name' => $product_name
-            )
-        );
-
-        $customer_details = array(
-            'first_name' => "Pembeli",
-            'last_name' => "Satu",
-            'email' => "pembeli@example.com",
-            'phone' => "081234567890",
-        );
-
-        $params = array(
-            'payment_type' => 'qris',
-            'transaction_details' => $transaction_details,
-            'item_details' => $item_details,
-            'customer_details' => $customer_details
-        );
-
         $qris_response = \Midtrans\CoreApi::charge($params);
 
-        if (isset($qris_response->actions)) {
-            foreach ($qris_response->actions as $action) {
-                if ($action->name == 'generate-qr-code') {
-                    $qr_code_url = $action->url;
-                    break;
-                }
+        // Check if the response is valid
+        if (!isset($qris_response->actions) || empty($qris_response->actions)) {
+            throw new Exception("Invalid response from Midtrans");
+        }
+
+        foreach ($qris_response->actions as $action) {
+            if ($action->name == 'generate-qr-code') {
+                $qr_code_url = $action->url;
+                break;
             }
         }
 
@@ -124,17 +124,27 @@ function create_transaction($data) {
             throw new Exception("QR code URL not found in the response");
         }
 
+        $stmt = $db->prepare("INSERT INTO transaksi (order_id, product_id, product_name, price, tanggal, status) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$order_id, $product_id, $product_name, $total_price, date("Y-m-d"), 'pending']);
+
         echo json_encode([
             'success' => true,
             'qr_code_url' => $qr_code_url,
             'order_id' => $order_id
         ]);
-
     } catch (Exception $e) {
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
+        // Handle database errors
+        if ($db->errorInfo()) {
+            echo json_encode([
+                'success' => false,
+                'message' => "Database error: " . implode(", ", $db->errorInfo())
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 }
 
