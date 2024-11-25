@@ -4,15 +4,13 @@ session_start();
 $conn = mysqli_connect("localhost", "root", "", "framee");
 
 
-// Fungsi untuk cek pin
 function cek_pin($pin) {
     global $conn;
-    $query = "SELECT * FROM pin WHERE pin = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $pin);
+    $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_key = 'keypad_pin'");
     $stmt->execute();
     $result = $stmt->get_result();
-    return $result->num_rows > 0;
+    $row = $result->fetch_assoc();
+    return $pin === $row['setting_value'];
 }
 
 // Fungsi untuk login
@@ -41,76 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <head>
         <title>Keypad</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <style>
-            body {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                background-color: #f8f9fa;
-            }
-            .calculator-container {
-            text-align: center;
-            }
-            .calculator {
-                width: 250px;
-                padding: 20px;
-                border-radius: 15px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                background-color: #ffffff;
-                margin-bottom: 20px;
-            }
-            .display {
-                width: 100%;
-                height: 50px;
-                background-color: #6c757d;
-                color: #ffffff;
-                text-align: center;
-                line-height: 50px;
-                border-radius: 10px;
-                margin-bottom: 20px;
-                font-size: 24px;
-            }
-            .btn {
-                width: 60px;
-                height: 60px;
-                margin: 5px;
-                font-size: 24px;
-                border-radius: 10px;
-            }
-            .btn-number {
-                background-color: #6c757d;
-                color: #ffffff;
-            }
-            .btn-backspace {
-                background-color: #dc3545;
-                color: #ffffff;
-            }
-            .btn-enter {
-                background-color: #28a745;
-                color: #ffffff;
-            }
-
-            .modal-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .modal-title {
-                margin-bottom: 0;
-            }
-
-            .modal-footer .btn {
-                padding: 0.375rem 0.75rem;
-                font-size: 1rem;
-            }
-            .back-button {
-            width: 70%;
-            max-width: 220px;
-            }
-        </style>
     </head>
     <body>
         <div class="calculator-container">
