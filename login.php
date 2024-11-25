@@ -39,7 +39,7 @@ if(isset($_POST['login'])){
 ?>
 <!DOCTYPE html>
 <html lang="en">
-    <>
+    <head>
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
@@ -48,47 +48,8 @@ if(isset($_POST['login'])){
         <title>Login</title>
         <link href="css/style.css" rel="stylesheet" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" crossorigin="anonymous"></script>
-        <style>
-        body {
-                overflow: hidden; /* Menghindari scrollbar */
-                color: white; /* Mengubah warna teks menjadi putih */
-            }
-            .background {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-image: url('path/to/your/fog-image.png'); /* Ganti dengan path gambar kabut */
-                background-size: cover;
-                animation: move 30s linear infinite; /* Animasi gerakan */
-                z-index: -1; /* Menempatkan di belakang konten */
-            }
-            @keyframes move {
-                0% { background-position: 0 0; }
-                100% { background-position: 100% 100%; }
-            }
-            .card {
-                background-color: rgba(0, 0, 0, 0.7); /* Transparansi pada latar belakang kartu */
-            }
-            .btn-info {
-                background-color: #007bff; /* Warna tombol */
-                border: none;
-            }
-            .btn-info:hover {
-                background-color: #0056b3; /* Warna tombol saat hover */
-            }
-            .btn-secondary {
-                background-color: #6c757d; /* Warna tombol kembali */
-                border: none;
-            }
-            .btn-secondary:hover {
-                background-color: #5a6268; /* Warna tombol kembali saat hover */
-            }
-        </style>
     </head>
     <body class="bg-dark">
-        <div class="background"></div>
             <div>
                 <main>
                     <div class="row justify-content-center">
